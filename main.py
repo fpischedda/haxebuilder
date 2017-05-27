@@ -60,7 +60,7 @@ async def test(request, repo_id):
     return json(repo)
 
 
-@app.route("/repsitories/<repo_id>/build", methods=["POST"])
+@app.route("/repositories/<repo_id>/build", methods=["POST"])
 async def test(request, repo_id):
     db = request.app.db
 
@@ -69,10 +69,13 @@ async def test(request, repo_id):
         return error_reason(f"repository {repo_id} not found")
 
     branch = get_branch_from_request(request)
-    if branch in repo.tracked_branches:
+    if branch not in repo["tracked_branches"]:
         return error_reason(f"branch {branch} not tracked")
 
     job = await jobs.create(db, repo_id, branch)
+    await jobs.run_build(db, job["_id"],
+            repo_id, repo["url"], branch,
+            repo["targets"], "/opt/haxebuilder/builds")
     return json(job)
 
 

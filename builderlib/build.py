@@ -35,7 +35,7 @@ def build(work_dir, target):
 
 
 def copy_build_result(work_dir, target, destination):
-    origin = os.path.join(work_dir, "exports", target)
+    origin = os.path.join(work_dir, "exports", target, "bin")
     shutil.copytree(origin, destination)
 
 

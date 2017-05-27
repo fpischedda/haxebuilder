@@ -6,14 +6,21 @@ import shutil
 import subprocess
 
 
-def clone_repo(dest_dir, repo_url, branch):
+class CloneError(Exception):
+    pass
+
+
+class BuildError(Exception):
+    pass
+
+
+def clone_repo(work_dir, repo_url, branch):
     try:
         subprocess.run(
-                ["git", "clone", "-b", branch, repo_url, dest_dir],
+                ["git", "clone", "-b", branch, repo_url, work_dir],
                 check=True)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
+    except subprocess.CalledProcessError:
+        raise CloneError
 
 
 def build(work_dir, target):
@@ -23,8 +30,8 @@ def build(work_dir, target):
                 cwd=work_dir,
                 check=True)
         return True
-    except subprocess.CalledProcessError as e:
-        return False
+    except subprocess.CalledProcessError:
+        raise BuildError
 
 
 def copy_build_result(work_dir, target, destination):

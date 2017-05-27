@@ -39,7 +39,9 @@ async def update(db, job_id, **changed):
     return await db.jobs.update_one({"_id": job_id}, {"set": changed})
 
 
-async def run_build(db, job_id, repository_id, branch, targets, builds_dir):
+async def run_build(db, job_id, repository_id,
+        repository_url, branch, targets, builds_dir):
+
     await update_job(db, job_id, status="building")
 
     work_dir = f"/tmp/{job_id}"

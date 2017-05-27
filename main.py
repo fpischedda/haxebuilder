@@ -76,6 +76,10 @@ async def test(request, repo_id):
     return json(job)
 
 
+def get_branch_from_request(request):
+    return "master"
+
+
 def validate_repo(repo):
     print(repo)
     return repo

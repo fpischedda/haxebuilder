@@ -1,6 +1,7 @@
 """
 thid module contains functions used to create a build
 """
+import os.path
 import shutil
 import subprocess
 
@@ -12,16 +13,23 @@ def clone_repo(dest_dir, repo_url, branch):
                 check=True)
         return True
     except subprocess.CalledProcessError as e:
-        print(e)
         return False
 
 
 def build(work_dir, target):
-    subprocess.run(["lime", "build", target], cwd=work_dir)
+    try:
+        subprocess.run(
+                ["lime", "build", target],
+                cwd=work_dir,
+                check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        return False
 
 
-def compress_build(work_dir, target):
-    pass
+def copy_build_result(work_dir, target, destination):
+    origin = os.path.join(work_dir, "exports", target)
+    shutil.copytree(origin, destination)
 
 
 def clean_work_dir(work_dir):

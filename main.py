@@ -8,6 +8,7 @@ import aioredis
 import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
+import auth
 from builderlib import jobs
 from builderlib import users
 from builderlib import repositories
@@ -20,14 +21,47 @@ app.config.from_envvar("HAXEBUILDER_CONFIG")
 @app.listener("before_server_start")
 async def init_db(app, loop):
     client = motor.motor_asyncio.AsyncIOMotorClient(app.config.MONGO_URL)
-    app.db = client["haxebuilder"]
+    app.db = client[app.config.MONGO_DB_NAME]
     app.redis_pool = await aioredis.create_pool(
             (app.config.REDIS_HOST, app.config.REDIS_PORT))
     app.pubsub_channel = app.config.REDIS_PUBSUB_CHANNEL
 
 
+def get_user_from_request(request):
+    # try to get a token from the X-Auth-Token header
+    token = request.headers.get("X-Auth-Token", None)
+
+    # if it's empy try to fetch it from the cookies
+    if token is None:
+        token = request.cookies.get("jwt_token", None)
+
+    if token is None:
+        return None
+    else:
+        return auth.user_from_token(
+                token,
+                request.app.config.SESSION_SECRET)
+
+
+@app.route("/login", methods=["POST"])
+async def login(request):
+    db = request.app.db
+    try:
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        user = await auth.login(db, username, password)
+        token = auth.generate_token(user, request.app.config.SESSION_SECRET)
+        user["token"] = token
+        response = json(user)
+        response.cookies["token"] = token
+        return response 
+    except users.UserExistsException:
+        return error_reason("user already exists")
+
+
 @app.route("/users/new", methods=["POST"])
-async def test(request):
+async def user_new(request):
     db = request.app.db
     try:
         user = await users.create(db, **request.json)
@@ -36,18 +70,20 @@ async def test(request):
         return error_reason("user already exists")
 
 
-@app.route("/users/<user_id>", methods=["GET"])
-async def test(request, user_id):
+@app.route("/profile", methods=["GET"])
+async def user_profile(request):
     db = request.app.db
+    request_user = get_user_from_request(request)
+    user_id = request_user["_id"]
     user = await users.get_by_id(db, user_id)
     if user is None:
         return error_reason(f"user {user_id} not found")
-    user["repositories"] = repositories.get_all_by_user_id(db, user_id) 
-    return json(users)
+    user["repositories"] = await repositories.get_all_by_user_id(db, user_id) 
+    return json(user)
 
 
 @app.route("/repositories/new", methods=["POST"])
-async def test(request):
+async def repository_new(request):
     db = request.app.db
     src_repo = validate_repo(request.json)
     repo = await repositories.create(db, **src_repo)
@@ -57,7 +93,7 @@ async def test(request):
 
 
 @app.route("/repositories/<repo_id>", methods=["GET"])
-async def test(request, repo_id):
+async def repository_details(request, repo_id):
     db = request.app.db
     repo = await repositories.get_by_id(db, repo_id)
     if repo is None:
@@ -66,7 +102,7 @@ async def test(request, repo_id):
 
 
 @app.route("/repositories/<repo_id>/build", methods=["POST"])
-async def test(request, repo_id):
+async def build(request, repo_id):
     db = request.app.db
 
     repo = await repositories.get_by_id(db, repo_id)

@@ -37,3 +37,9 @@ async def create(db, username, email, password):
 
 async def get_by_id(db, user_id):
     return await db.profiles.find_one({"_id": user_id})
+
+
+async def get_by_username_password(db, username, password):
+    return await db.profiles.find_one({
+        "username": username,
+        "password_hash": auth.get_hash(password)})

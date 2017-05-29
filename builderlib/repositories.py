@@ -23,4 +23,4 @@ async def get_by_id(db, repo_id):
 
 
 async def get_all_by_user_id(db, user_id):
-    return await db.repositories.find({"user_id": user_id}).to_list()
+    return await db.repositories.find({"user_id": user_id}).to_list(None)

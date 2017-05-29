@@ -11,7 +11,7 @@ import config
 async def worker():
     print("Starting Jobs Worker...")
     client = motor.motor_asyncio.AsyncIOMotorClient(config.MONGO_URL)
-    mongo_db = client["haxebuilder"]
+    mongo_db = client[config.MONGO_DB_NAME]
 
     sub = await aioredis.create_redis(
                  (config.REDIS_HOST, config.REDIS_PORT))

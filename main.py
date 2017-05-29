@@ -92,7 +92,7 @@ async def test(request, repo_id):
 
 def get_branch_from_request(request):
     try:
-        return request.json["push"]["changes"]["new"]["name"]
+        return request.json["push"]["new"]["name"]
     except:
         return "master"
 

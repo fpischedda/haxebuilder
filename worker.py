@@ -5,16 +5,17 @@ import asyncio
 import aioredis
 import motor.motor_asyncio
 from builderlib import jobs
+import config
 
 
 async def worker():
     print("Starting Jobs Worker...")
-    client = motor.motor_asyncio.AsyncIOMotorClient()
+    client = motor.motor_asyncio.AsyncIOMotorClient(config.MONGO_URL)
     mongo_db = client["haxebuilder"]
 
     sub = await aioredis.create_redis(
-                 ('localhost', 6379))
-    job_chan, *_ = await sub.subscribe('jobs')
+                 (config.REDIS_HOST, config.REDIS_PORT))
+    job_chan, *_ = await sub.subscribe(config.REDIS_PUBSUB_CHANNEL)
 
     print("Subscribed to jobs channel")
     print("Waiting for jobs")

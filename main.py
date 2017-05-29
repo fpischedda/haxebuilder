@@ -14,14 +14,16 @@ from builderlib import repositories
 from utils import error_reason
 
 
-app = Sanic()
+app = Sanic("haxebuilder")
+app.config.from_envvar("HAXEBUILDER_CONFIG")
 
 @app.listener("before_server_start")
 async def init_db(app, loop):
-    client = motor.motor_asyncio.AsyncIOMotorClient()
+    client = motor.motor_asyncio.AsyncIOMotorClient(app.config.MONGO_URL)
     app.db = client["haxebuilder"]
     app.redis_pool = await aioredis.create_pool(
-            ('localhost', 6379))
+            (app.config.REDIS_HOST, app.config.REDIS_PORT))
+    app.pubsub_channel = app.config.REDIS_PUBSUB_CHANNEL
 
 
 @app.route("/users/new", methods=["POST"])
@@ -85,7 +87,7 @@ async def test(request, repo_id):
                 "branch": branch,
                 "targets": repo["targets"],
                 "builds_dir": "/opt/haxebuilder/builds"}
-        await conn.publish_json('jobs', details)
+        await conn.publish_json(app.pubsub_channel, details)
 
     return json(job)
 

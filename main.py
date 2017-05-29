@@ -80,7 +80,10 @@ async def test(request, repo_id):
 
 
 def get_branch_from_request(request):
-    return "master"
+    try:
+        return request.json["new"]["name"]
+    except:
+        return "master"
 
 
 def validate_repo(repo):

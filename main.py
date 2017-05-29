@@ -4,6 +4,7 @@ import uvloop
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+import aioredis
 import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
@@ -19,6 +20,8 @@ app = Sanic()
 async def init_db(app, loop):
     client = motor.motor_asyncio.AsyncIOMotorClient()
     app.db = client["haxebuilder"]
+    app.redis_pool = await aioredis.create_pool(
+            ('localhost', 6379))
 
 
 @app.route("/users/new", methods=["POST"])
@@ -73,15 +76,23 @@ async def test(request, repo_id):
         return error_reason(f"branch {branch} not tracked")
 
     job = await jobs.create(db, repo_id, branch)
-    await jobs.run_build(db, job["_id"],
-            repo_id, repo["url"], branch,
-            repo["targets"], "/opt/haxebuilder/builds")
+    # send message to job queue
+    with await request.app.redis_pool as conn:
+        details = {
+                "job_id": job["_id"],
+                "repository_id": repo_id,
+                "repository_url": repo["url"],
+                "branch": branch,
+                "targets": repo["targets"],
+                "builds_dir": "/opt/haxebuilder/builds"}
+        await conn.publish_json('jobs', details)
+
     return json(job)
 
 
 def get_branch_from_request(request):
     try:
-        return request.json["new"]["name"]
+        return request.json["push"]["new"]["name"]
     except:
         return "master"
 

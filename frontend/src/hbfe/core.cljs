@@ -10,9 +10,6 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 
-(defn get_profile []
-  {:token "abcdef" :username "minasss" :email "francesco.pischedda@gmail.com"})
-
 (defn get_jobs []
   [{:_id "111" :created_at "yesterday" :status "finished"}])
 
@@ -25,9 +22,9 @@
 
 (defonce app-state (atom {:job-list (get_jobs)
                           :repositories (get_repositories)
-                          :profile (get_profile)}))
+                          :profile nil}))
 
-(login/mount "app" app-state (fn []
+(login/mount (rum/cursor-in app-state [:profile]) "app" (fn []
                                (dashboard/mount "app" app-state)))
 
 (defn on-js-reload []

@@ -6,7 +6,14 @@
    [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]))
 
-(defn autenticate [username password]
+(defn get-profile-from-response [response]
+  response)
+
+(defn logged-in [state res success-fn]
+  (reset! state (get-profile-from-response res))
+  (success-fn))
+
+(defn autenticate [username password state success-fn]
   (go (let [response (<! (http/post "http://localhost:8000/login"
                                    {:with-credentials? false
                                     :form-params {:username username
@@ -14,11 +21,8 @@
         (if (and
              (= 200 (:status response))
              (= nil (:error (:body response))))
-          (:body response)
-          {:error (str "Server responded with status code" (:status response))}))))
-
-(defn get-profile-from-response [response]
-  response)
+          (logged-in state (:body response) success-fn)
+          {:error (str "Server responded with status code " (:status response) " error message " (:error (:body response)))}))))
 
 (rum/defc label-input [label property-map]
   [:label label
@@ -26,13 +30,12 @@
 
 (rum/defc login-button [state success-fn]
   [:button {:on-click (fn[e]
-                        (let [res (autenticate (dom/value
-                                                   (dom/q "#username"))
-                                                  (dom/value
-                                                   (dom/q "#password")))]
-                          (when (not (= nil (:token res)))
-                            (reset! state (get-profile-from-response res))
-                            (success-fn))))}
+                        (autenticate (dom/value
+                                      (dom/q "#username"))
+                                     (dom/value
+                                      (dom/q "#password"))
+                                     state
+                                     success-fn))}
    "Login"])
 
 (rum/defc login [state success-fn]

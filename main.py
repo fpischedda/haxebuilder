@@ -45,8 +45,8 @@ def get_user_from_request(request):
 async def login(request):
     db = request.app.db
     try:
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
 
         user = await auth.login(db, username, password)
         token = auth.generate_token(user, request.app.config.SESSION_SECRET)

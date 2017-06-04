@@ -1,10 +1,21 @@
 (ns hbfe.components.login
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
    [rum.core :as rum]
+   [cljs-http.client :as http]
+   [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]))
 
-(defn get-auth-token [username password]
-  {:username username :token "aaaa" :email "ffff@fff.ff"})
+(defn autenticate [username password]
+  (go (let [response (<! (http/post "http://localhost:8000/login"
+                                   {:with-credentials? false
+                                    :form-params {:username username
+                                                  :password password}}))]
+        (if (and
+             (= 200 (:status response))
+             (= nil (:error (:body response))))
+          (:body response)
+          {:error (str "Server responded with status code" (:status response))}))))
 
 (defn get-profile-from-response [response]
   response)
@@ -15,7 +26,7 @@
 
 (rum/defc login-button [state success-fn]
   [:button {:on-click (fn[e]
-                        (let [res (get-auth-token (dom/value
+                        (let [res (autenticate (dom/value
                                                    (dom/q "#username"))
                                                   (dom/value
                                                    (dom/q "#password")))]

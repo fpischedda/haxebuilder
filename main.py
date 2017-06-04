@@ -1,21 +1,20 @@
 import asyncio
-import uvloop
-
-
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 import aioredis
 import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
+from sanic_cors import CORS
+import uvloop
 import auth
 from builderlib import jobs
 from builderlib import users
 from builderlib import repositories
 from utils import error_reason
 
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = Sanic("haxebuilder")
+CORS(app)
 app.config.from_envvar("HAXEBUILDER_CONFIG")
 
 @app.listener("before_server_start")
@@ -55,7 +54,7 @@ async def login(request):
         user["token"] = token
         response = json(user)
         response.cookies["token"] = token
-        return response 
+        return response
     except users.CredentialsError:
         return error_reason("wrong username or password")
 

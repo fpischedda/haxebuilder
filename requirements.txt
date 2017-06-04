@@ -6,6 +6,7 @@ motor==1.1
 PyJWT==1.5.0
 pymongo==3.4.0
 sanic==0.5.4
+Sanic-Cors==0.5.4.1
 ujson==1.35
 uvloop==0.8.0
 websockets==3.3

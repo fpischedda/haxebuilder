@@ -56,8 +56,8 @@ async def login(request):
         response = json(user)
         response.cookies["token"] = token
         return response 
-    except users.UserExistsException:
-        return error_reason("user already exists")
+    except users.CredentialsError:
+        return error_reason("wrong username or password")
 
 
 @app.route("/users/new", methods=["POST"])

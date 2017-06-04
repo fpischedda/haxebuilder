@@ -32,14 +32,13 @@ def get_user_from_request(request):
 
     # if it's empy try to fetch it from the cookies
     if token is None:
-        token = request.cookies.get("jwt_token", None)
+        token = request.cookies.get("token", None)
 
     if token is None:
         return None
-    else:
-        return auth.user_from_token(
-                token,
-                request.app.config.SESSION_SECRET)
+    return auth.user_from_token(
+        token,
+        request.app.config.SESSION_SECRET)
 
 
 @app.route("/login", methods=["POST"])
@@ -55,7 +54,7 @@ async def login(request):
         response = json(user)
         response.cookies["token"] = token
         return response
-    except users.CredentialsError:
+    except auth.CredentialsError:
         return error_reason("wrong username or password")
 
 

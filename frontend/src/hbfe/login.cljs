@@ -14,6 +14,13 @@
   (reset! state (get-profile-from-response res))
   (success-fn))
 
+(rum/defc message-label [text]
+  [:label.error text])
+
+(defn show-message [text]
+  (rum/mount (message-label text)
+             (js/document.getElementById "messages")))
+
 (defn autenticate [username password state success-fn]
   (go (let [response (<! (http/post config/login-url
                                     {:with-credentials? false
@@ -23,7 +30,7 @@
              (= 200 (:status response))
              (= nil (:error (:body response))))
           (logged-in state (:body response) success-fn)
-          {:error (str "Server responded with status code " (:status response) " error message " (:error (:body response)))}))))
+          (show-message (str "Server responded with error message: " (get-in response [:body :error :message])))))))
 
 (rum/defc label-input [label property-map]
   [:label label
@@ -47,7 +54,8 @@
                  {:type "text" :name "username" :id "username"})
     (label-input "Password"
                  {:type "password" :name "password" :id "password"})
-    (login-button state success-fn)]])
+    (login-button state success-fn)]
+   [:div#messages]])
 
 (defn mount [state element-id success-fn]
   (rum/mount (login state success-fn)

@@ -3,6 +3,7 @@ import aioredis
 import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
+from sanic.response import text
 from sanic_cors import CORS
 import uvloop
 import auth
@@ -76,8 +77,19 @@ async def user_profile(request):
     user = await users.get_by_id(db, user_id)
     if user is None:
         return error_reason(f"user {user_id} not found")
-    user["repositories"] = await repositories.get_all_by_user_id(db, user_id) 
+    user["repositories"] = await repositories.get_all_by_user_id(db, user_id)
     return json(user)
+
+
+@app.route("/repositories", methods=["GET", "OPTIONS"])
+async def user_repositories(request):
+    if request.method == "OPTIONS":
+        return text("")
+    db = request.app.db
+    request_user = get_user_from_request(request)
+    user_id = request_user["_id"]
+    repos = await repositories.get_all_by_user_id(db, user_id)
+    return json(repos)
 
 
 @app.route("/repositories/new", methods=["POST"])

@@ -13,15 +13,8 @@
 (defn get_jobs []
   [{:_id "111" :created_at "yesterday" :status "finished"}])
 
-(defn get_repositories []
-  [{:_id "1223"
-    :name "repo name"
-    :url "https://blabla.com"
-    :tracked_branches ["master" "build"]
-    :targets ["html5"]}])
-
 (defonce app-state (atom {:job-list (get_jobs)
-                          :repositories (get_repositories)
+                          :repositories nil
                           :profile nil}))
 
 (login/mount (rum/cursor-in app-state [:profile]) "app" (fn []

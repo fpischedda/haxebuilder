@@ -1,6 +1,11 @@
 (ns hbfe.components.dashboard
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
-   [rum.core :as rum]))
+   [rum.core :as rum]
+   [cljs-http.client :as http]
+   [cljs.core.async :refer [<!]]
+   [hbfe.dom :as dom]
+   [hbfe.config :as config]))
 
 (rum/defc repository-item [item]
   [:li {:id (:_id item) :key (:_id item)} (str (:_id item) "-" (:name item) "-" (:url item))])
@@ -24,6 +29,22 @@
    (repository-list (:repositories state))
    (job-list (:job-list state))])
 
+(defn got-repositories [state response mount-fn]
+  (swap! state (assoc @state :repositories (:body response)))
+  (mount-fn))
+
+(defn load-repositories [state mount-fn]
+  (go (let [response (<! (http/get config/repositories-url
+                                   {:with-credentials? false
+                                    :headers {"X-Auth-Token" (:token (:profile @state))}}))]
+        (if (and
+             (= 200 (:status response))
+             (= nil (:error (:body response))))
+          (got-repositories state response mount-fn)
+          {:error (str "Server responded with status code " (:status response) " error message " (:error (:body response)))}))))
+
 (defn mount [element-id state]
-  (rum/mount (dashboard @state)
-             (js/document.getElementById element-id)))
+  (load-repositories state (fn[]
+                             (prn @state)
+                             (rum/mount (dashboard @state)
+                                        (js/document.getElementById element-id)))))

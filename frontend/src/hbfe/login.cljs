@@ -4,7 +4,8 @@
    [rum.core :as rum]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
-   [hbfe.dom :as dom]))
+   [hbfe.dom :as dom]
+   [hbfe.config :as config]))
 
 (defn get-profile-from-response [response]
   response)
@@ -14,10 +15,10 @@
   (success-fn))
 
 (defn autenticate [username password state success-fn]
-  (go (let [response (<! (http/post "http://localhost:8000/login"
-                                   {:with-credentials? false
-                                    :form-params {:username username
-                                                  :password password}}))]
+  (go (let [response (<! (http/post config/login-url
+                                    {:with-credentials? false
+                                     :form-params {:username username
+                                                   :password password}}))]
         (if (and
              (= 200 (:status response))
              (= nil (:error (:body response))))

@@ -9,26 +9,30 @@
    [hbfe.config :as config]))
 
 (rum/defc repository-item [item]
-  [:li {:id (:_id item) :key (:_id item)} (str (:_id item) "-" (:name item) "-" (:url item))])
+  (let [{:keys [_id name url]} item]
+    [:li {:id _id :key _id} (str _id "-" name "-" url)]))
 
 (rum/defc repository-list [repositories]
   [:ul.repository-list {:key "repositories"} (map #(repository-item %1) repositories)])
 
 (rum/defc job-line [item]
-  [:li {:id (:_id item) :key (:_id item)} (str (:_id item) "-" (:created_at item) "-" (:status item))])
+  (let [{:keys [_id created_at status]} item]
+    [:li {:id _id :key _id} (str _id "-" created_at  "-" status)]))
 
 (rum/defc job-list [jobs]
   [:ul.job-list {:key "jobs"} (map #(job-line %1) jobs)])
 
 (rum/defc profile [user]
-  [:div.profile {:key "profile"}
-   [:span (:username user)]])
+  (let [{:keys [username email]} user]
+    [:div.profile {:key "profile"}
+     [:span username]
+     [:span email]]))
 
 (rum/defc dashboard [state]
-  [:div
-   (profile (:profile state))
-   (repository-list (:repositories state))
-   (job-list (:job-list state))])
+  (let [{:keys [profile repositories job-list]} state]
+    [:div
+     (profile profile)
+     (repository-list repositories)]))
 
 (defn got-repositories [state response mount-fn]
   (reset! state (assoc @state :repositories (:body response)))

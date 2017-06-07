@@ -6,16 +6,9 @@
 
 (enable-console-print!)
 
-(println "This text is printed from src/fe/core.cljs. Go ahead and edit it and see reloading in action.")
-
 ;; define your app data so that it doesn't get over-written on reload
 
-(defn get_jobs []
-  [{:_id "111" :created_at "yesterday" :status "finished"}])
-
-(defonce app-state (atom {:job-list (get_jobs)
-                          :repositories nil
-                          :profile nil}))
+(defonce app-state (atom {}))
 
 (login/mount (rum/cursor-in app-state [:profile]) "app" (fn []
                                (dashboard/mount "app" app-state)))

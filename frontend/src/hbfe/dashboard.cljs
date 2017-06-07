@@ -5,6 +5,7 @@
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]
+   [hbfe.utils :refer [error-message show-message]]
    [hbfe.config :as config]))
 
 (rum/defc repository-item [item]
@@ -30,7 +31,7 @@
    (job-list (:job-list state))])
 
 (defn got-repositories [state response mount-fn]
-  (swap! state (assoc @state :repositories (:body response)))
+  (reset! state (assoc @state :repositories (:body response)))
   (mount-fn))
 
 (defn load-repositories [state mount-fn]
@@ -41,10 +42,9 @@
              (= 200 (:status response))
              (= nil (:error (:body response))))
           (got-repositories state response mount-fn)
-          {:error (str "Server responded with status code " (:status response) " error message " (:error (:body response)))}))))
+          {:error (str "Server responded with error message " (error-message response))}))))
 
 (defn mount [element-id state]
   (load-repositories state (fn[]
-                             (prn @state)
                              (rum/mount (dashboard @state)
                                         (js/document.getElementById element-id)))))

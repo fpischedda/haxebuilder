@@ -5,6 +5,7 @@
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]
+   [hbfe.utils :refer [error-message show-message]]
    [hbfe.config :as config]))
 
 (defn get-profile-from-response [response]
@@ -13,13 +14,6 @@
 (defn logged-in [state res success-fn]
   (reset! state (get-profile-from-response res))
   (success-fn))
-
-(rum/defc message-label [text]
-  [:label.error text])
-
-(defn show-message [text]
-  (rum/mount (message-label text)
-             (js/document.getElementById "messages")))
 
 (defn autenticate [username password state success-fn]
   (go (let [response (<! (http/post config/login-url
@@ -30,7 +24,7 @@
              (= 200 (:status response))
              (= nil (:error (:body response))))
           (logged-in state (:body response) success-fn)
-          (show-message (str "Server responded with error message: " (get-in response [:body :error :message])))))))
+          (show-message "messages" (str "Server responded with error message: " (error-message response)))))))
 
 (rum/defc label-input [label property-map]
   [:label label

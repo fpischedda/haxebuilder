@@ -96,8 +96,11 @@ async def user_repositories(request):
 @app.route("/repositories/new", methods=["POST"])
 async def repository_new(request):
     db = request.app.db
+    request_user = get_user_from_request(request)
     src_repo = validate_repo(request.json)
-    repo = await repositories.create(db, **src_repo)
+    repo = await repositories.create(db,
+                                     user_id=request_user["_id"],
+                                     **src_repo)
     if repo is None:
         return error_reason("unable to create new repository")
     return json(repo)
@@ -106,10 +109,23 @@ async def repository_new(request):
 @app.route("/repositories/<repo_id>", methods=["GET"])
 async def repository_details(request, repo_id):
     db = request.app.db
+    request_user = get_user_from_request(request)
+    if not repositories.belongs_to_user(repo_id, request_user["_id"]):
+        return error_reason(f"repository {repo_id} does not belong to you")
     repo = await repositories.get_by_id(db, repo_id)
     if repo is None:
         return error_reason(f"unable to find repository {repo_id}")
     return json(repo)
+
+
+@app.route("/repositories/<repo_id>/jobs", methods=["GET", "OPTIONS"])
+async def repository_jobs(request, repo_id):
+    db = request.app.db
+    request_user = get_user_from_request(request)
+    if not repositories.belongs_to_user(repo_id, request_user["_id"]):
+        return error_reason(f"repository {repo_id} does not belong to you")
+    job_list = await jobs.get_all_by_repository_id(db, repo_id)
+    return json(job_list)
 
 
 @app.route("/repositories/<repo_id>/build", methods=["POST"])
@@ -133,7 +149,7 @@ async def build(request, repo_id):
                 "repository_url": repo["url"],
                 "branch": branch,
                 "targets": repo["targets"],
-                "builds_dir": "/opt/haxebuilder/builds"}
+                "builds_dir": app.config.BUILDS_DIR}
         await conn.publish_json(app.pubsub_channel, details)
 
     return json(job)
@@ -147,7 +163,10 @@ def get_branch_from_request(request):
 
 
 def validate_repo(repo):
-    print(repo)
+    try:
+        del repo["user_id"]
+    except KeyError:
+        pass
     return repo
 
 

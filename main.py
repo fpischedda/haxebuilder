@@ -4,6 +4,7 @@ import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
 from sanic.response import text
+from sanic_cors import cross_origin
 from sanic_cors import CORS
 import uvloop
 import auth
@@ -17,6 +18,7 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 app = Sanic("haxebuilder")
 CORS(app)
 app.config.from_envvar("HAXEBUILDER_CONFIG")
+
 
 @app.listener("before_server_start")
 async def init_db(app, loop):
@@ -82,9 +84,8 @@ async def user_profile(request):
 
 
 @app.route("/repositories", methods=["GET", "OPTIONS"])
+@cross_origin(app, automatic_options=True)
 async def user_repositories(request):
-    if request.method == "OPTIONS":
-        return text("")
     db = request.app.db
     request_user = get_user_from_request(request)
     user_id = request_user["_id"]

@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
    [rum.core :as rum]
+   [clojure.string :refer [join]]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]
@@ -9,29 +10,36 @@
    [hbfe.config :as config]))
 
 (rum/defc repository-item [item]
-  (let [{:keys [_id name url]} item]
-    [:li {:id _id :key _id} (str _id "-" name "-" url)]))
+  (let [{:keys [_id name url tracked_branches targets]} item]
+    [:tr {:on-click (fn [e] false)}
+     [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)]]))
 
 (rum/defc repository-list [repositories]
-  [:ul.repository-list {:key "repositories"} (map #(repository-item %1) repositories)])
+  [:div.repositories
+   [:p "Your repositories"]
+   [:table.repository-list
+    [:thead
+     [:tr
+      [:td "Name"] [:td "Url"] [:td "Branches"] [:td "Targets"]]]
+    [:tbody
+     (map #(repository-item %1) repositories)]]])
 
 (rum/defc job-line [item]
   (let [{:keys [_id created_at status]} item]
     [:li {:id _id :key _id} (str _id "-" created_at  "-" status)]))
 
 (rum/defc job-list [jobs]
-  [:ul.job-list {:key "jobs"} (map #(job-line %1) jobs)])
+  [:ul.job-list (map #(job-line %1) jobs)])
 
-(rum/defc profile [user]
+(rum/defc profile-line [user]
   (let [{:keys [username email]} user]
-    [:div.profile {:key "profile"}
-     [:span username]
-     [:span email]]))
+    [:div.profile
+     (str "Hello " username)]))
 
 (rum/defc dashboard [state]
   (let [{:keys [profile repositories job-list]} state]
     [:div
-     (profile profile)
+     (profile-line profile)
      (repository-list repositories)]))
 
 (defn got-repositories [state response mount-fn]

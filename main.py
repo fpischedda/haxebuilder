@@ -20,6 +20,18 @@ CORS(app)
 app.config.from_envvar("HAXEBUILDER_CONFIG")
 
 
+def login_required(fun):
+
+    async def wrapped(request, *args, **kwargs):
+        request_user = get_user_from_request(request)
+
+        if request_user is None:
+            return error_reason("login required", status=401)
+        return fun(request, request_user, *args, **kwargs)
+
+    return wrapped
+
+
 @app.listener("before_server_start")
 async def init_db(app, loop):
     client = motor.motor_asyncio.AsyncIOMotorClient(app.config.MONGO_URL)
@@ -71,11 +83,12 @@ async def user_new(request):
         return error_reason("user already exists")
 
 
-@app.route("/profile", methods=["GET"])
-async def user_profile(request):
+@app.route("/profile", methods=["GET", "OPTIONS"])
+@cross_origin(app, automatic_options=True)
+@login_required
+async def user_profile(request, user):
     db = request.app.db
-    request_user = get_user_from_request(request)
-    user_id = request_user["_id"]
+    user_id = user["_id"]
     user = await users.get_by_id(db, user_id)
     if user is None:
         return error_reason(f"user {user_id} not found")
@@ -85,32 +98,34 @@ async def user_profile(request):
 
 @app.route("/repositories", methods=["GET", "OPTIONS"])
 @cross_origin(app, automatic_options=True)
-async def user_repositories(request):
+@login_required
+async def user_repositories(request, user):
     db = request.app.db
-    request_user = get_user_from_request(request)
-    user_id = request_user["_id"]
+    user_id = user["_id"]
     repos = await repositories.get_all_by_user_id(db, user_id)
     return json(repos)
 
 
 @app.route("/repositories/new", methods=["POST"])
-async def repository_new(request):
+@cross_origin(app, automatic_options=True)
+@login_required
+async def repository_new(request, user):
     db = request.app.db
-    request_user = get_user_from_request(request)
     src_repo = validate_repo(request.json)
     repo = await repositories.create(db,
-                                     user_id=request_user["_id"],
+                                     user_id=user["_id"],
                                      **src_repo)
     if repo is None:
         return error_reason("unable to create new repository")
     return json(repo)
 
 
-@app.route("/repositories/<repo_id>", methods=["GET"])
-async def repository_details(request, repo_id):
+@app.route("/repositories/<repo_id>", methods=["GET", "OPTIONS"])
+@cross_origin(app, automatic_options=True)
+@login_required
+async def repository_details(request, user, repo_id):
     db = request.app.db
-    request_user = get_user_from_request(request)
-    if not repositories.belongs_to_user(repo_id, request_user["_id"]):
+    if not repositories.belongs_to_user(repo_id, user["_id"]):
         return error_reason(f"repository {repo_id} does not belong to you")
     repo = await repositories.get_by_id(db, repo_id)
     if repo is None:
@@ -119,10 +134,11 @@ async def repository_details(request, repo_id):
 
 
 @app.route("/repositories/<repo_id>/jobs", methods=["GET", "OPTIONS"])
-async def repository_jobs(request, repo_id):
+@cross_origin(app, automatic_options=True)
+@login_required
+async def repository_jobs(request, user, repo_id):
     db = request.app.db
-    request_user = get_user_from_request(request)
-    if not repositories.belongs_to_user(repo_id, request_user["_id"]):
+    if not repositories.belongs_to_user(repo_id, user["_id"]):
         return error_reason(f"repository {repo_id} does not belong to you")
     job_list = await jobs.get_all_by_repository_id(db, repo_id)
     return json(job_list)

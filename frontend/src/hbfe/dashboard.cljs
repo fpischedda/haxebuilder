@@ -6,7 +6,7 @@
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]
-   [hbfe.utils :refer [error-message show-message]]
+   [hbfe.utils :refer [error-message show-message label-input]]
    [hbfe.config :as config]))
 
 (rum/defc repository-item [item]
@@ -14,6 +14,9 @@
     [:tr {:on-click (fn [e] false)}
      [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)]]))
 
+(rum/defc repository-new []
+  [:tr
+   [:td [:input]]])
 (rum/defc repository-list [repositories]
   [:div.repositories
    [:p "Your repositories"]

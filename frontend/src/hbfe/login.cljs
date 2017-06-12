@@ -5,7 +5,7 @@
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
    [hbfe.dom :as dom]
-   [hbfe.utils :refer [error-message show-message]]
+   [hbfe.utils :refer [error-message show-message label-input]]
    [hbfe.config :as config]))
 
 (defn get-profile-from-response [response]
@@ -25,10 +25,6 @@
              (= nil (:error (:body response))))
           (logged-in state (:body response) success-fn)
           (show-message "messages" (str "Server responded with error message: " (error-message response)))))))
-
-(rum/defc label-input [label property-map]
-  [:label label
-   [:input property-map]])
 
 (rum/defc login-button [state success-fn]
   [:button {:on-click (fn[e]

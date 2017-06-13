@@ -4,7 +4,6 @@ import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
 from sanic.response import text
-from sanic_cors import cross_origin
 from sanic_cors import CORS
 import uvloop
 import auth
@@ -16,7 +15,7 @@ from utils import error_reason
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = Sanic("haxebuilder")
-CORS(app)
+CORS(app, automatic_options=True)
 app.config.from_envvar("HAXEBUILDER_CONFIG")
 
 
@@ -84,7 +83,6 @@ async def user_new(request):
 
 
 @app.route("/profile", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def user_profile(request, user):
     db = request.app.db
@@ -97,7 +95,6 @@ async def user_profile(request, user):
 
 
 @app.route("/repositories", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def user_repositories(request, user):
     db = request.app.db
@@ -107,7 +104,6 @@ async def user_repositories(request, user):
 
 
 @app.route("/repositories/new", methods=["POST"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def repository_new(request, user):
     db = request.app.db
@@ -121,7 +117,6 @@ async def repository_new(request, user):
 
 
 @app.route("/repositories/<repo_id>", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def repository_details(request, user, repo_id):
     db = request.app.db
@@ -134,7 +129,6 @@ async def repository_details(request, user, repo_id):
 
 
 @app.route("/repositories/<repo_id>/jobs", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def repository_jobs(request, user, repo_id):
     db = request.app.db

@@ -4,7 +4,6 @@ import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
 from sanic.response import text
-from sanic_cors import cross_origin
 from sanic_cors import CORS
 import uvloop
 import auth

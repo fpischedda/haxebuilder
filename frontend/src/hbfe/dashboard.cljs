@@ -14,18 +14,44 @@
     [:tr {:on-click (fn [e] false)}
      [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)]]))
 
-(rum/defc repository-new []
-  [:tr
-   [:td [:input]]])
+(defn create-repo [name url branches targets state success-fn]
+  nil)
+
+(rum/defc repository-new-button [state success-fn]
+  [:button {:on-click (fn[e]
+                        (create-repo (dom/value
+                                      (dom/q "#name"))
+                                     (dom/value
+                                      (dom/q "#url"))
+                                     (dom/value
+                                      (dom/q "#tracked-branches"))
+                                     (dom/value
+                                      (dom/q "#targets"))
+                                     state
+                                     success-fn))}
+   "Register repository"])
+
+(rum/defc repository-form-new []
+  [:div "Track new repository"
+   [:p (label-input "Name"
+                    {:type "text" :name "username" :id "username"})]
+   [:p (label-input "URL"
+                    {:type "text" :name "url" :id "url"})]
+   [:p (label-input "Tracked Branches"
+                    {:type "text" :name "tracked-branches" :id "tracked-branches"})]
+   [:p (label-input "Build targets"
+                    {:type "text" :name "targets" :id "targets"})]])
+
 (rum/defc repository-list [repositories]
   [:div.repositories
    [:p "Your repositories"]
    [:table.repository-list
     [:thead
      [:tr
-      [:td "Name"] [:td "Url"] [:td "Branches"] [:td "Targets"]]]
+      [:td "Name"] [:td "Url"] [:td "Tracked Branches"] [:td "Build Targets"]]]
     [:tbody
-     (map #(repository-item %1) repositories)]]])
+     (map #(repository-item %1) repositories)]]
+   [:p (repository-form-new)]])
 
 (rum/defc job-line [item]
   (let [{:keys [_id created_at status]} item]

@@ -16,8 +16,8 @@ from utils import error_reason
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = Sanic("haxebuilder")
-CORS(app)
 app.config.from_envvar("HAXEBUILDER_CONFIG")
+CORS(app, automatic_options=True)
 
 
 def login_required(fun):
@@ -27,7 +27,7 @@ def login_required(fun):
 
         if request_user is None:
             return error_reason("login required", status=401)
-        return fun(request, request_user, *args, **kwargs)
+        return await fun(request, request_user, *args, **kwargs)
 
     return wrapped
 
@@ -84,7 +84,6 @@ async def user_new(request):
 
 
 @app.route("/profile", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def user_profile(request, user):
     db = request.app.db
@@ -97,9 +96,9 @@ async def user_profile(request, user):
 
 
 @app.route("/repositories", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def user_repositories(request, user):
+    print("repos")
     db = request.app.db
     user_id = user["_id"]
     repos = await repositories.get_all_by_user_id(db, user_id)
@@ -107,7 +106,6 @@ async def user_repositories(request, user):
 
 
 @app.route("/repositories/new", methods=["POST"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def repository_new(request, user):
     db = request.app.db
@@ -121,7 +119,6 @@ async def repository_new(request, user):
 
 
 @app.route("/repositories/<repo_id>", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def repository_details(request, user, repo_id):
     db = request.app.db
@@ -134,7 +131,6 @@ async def repository_details(request, user, repo_id):
 
 
 @app.route("/repositories/<repo_id>/jobs", methods=["GET", "OPTIONS"])
-@cross_origin(app, automatic_options=True)
 @login_required
 async def repository_jobs(request, user, repo_id):
     db = request.app.db

@@ -5,14 +5,24 @@
    [clojure.string :refer [join]]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
+   [hbfe.state :refer [app-state]]
    [hbfe.dom :as dom]
    [hbfe.utils :refer [error-message show-message label-input]]
    [hbfe.config :as config]))
 
+(defn delete-repo [repo_id]
+  (go (let [response (<! (http/delete (config/repository-detail-url repo_id)
+                                    {:with-credentials? false
+                                     :headers {"X-Auth-Token" (:token (:profile @app-state))}}))])))
+
+(rum/defc repository-delete [repo_id]
+  [:button {:on-click (fn [e]
+                        (delete-repo repo_id))} "Delete"])
+
 (rum/defc repository-item [item]
   (let [{:keys [_id name url tracked_branches targets]} item]
     [:tr {:on-click (fn [e] false)}
-     [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)]]))
+     [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)] [(repository-delete _id)]]))
 
 (defn create-repo [name url branches targets state success-fn]
   nil)
@@ -48,7 +58,7 @@
    [:table.repository-list
     [:thead
      [:tr
-      [:td "Name"] [:td "Url"] [:td "Tracked Branches"] [:td "Build Targets"]]]
+      [:td "Name"] [:td "Url"] [:td "Tracked Branches"] [:td "Build Targets"] [:td ""]]]
     [:tbody
      (map #(repository-item %1) repositories)]]
    [:p (repository-form-new)]])

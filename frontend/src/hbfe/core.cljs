@@ -2,13 +2,10 @@
   (:require
    [rum.core :as rum]
    [hbfe.components.login :as login]
-   [hbfe.components.dashboard :as dashboard]))
+   [hbfe.components.dashboard :as dashboard]
+   [hbfe.state :refer [app-state]]))
 
 (enable-console-print!)
-
-;; define your app data so that it doesn't get over-written on reload
-
-(defonce app-state (atom {}))
 
 (login/mount (rum/cursor-in app-state [:profile]) "app" (fn []
                                (dashboard/mount "app" app-state)))

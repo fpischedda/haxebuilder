@@ -104,7 +104,7 @@ async def user_repositories(request, user):
     return json(repos)
 
 
-@app.route("/repositories/new", methods=["POST"])
+@app.route("/repositories", methods=["POST"])
 @login_required
 async def repository_new(request, user):
     db = request.app.db
@@ -121,7 +121,7 @@ async def repository_new(request, user):
 @login_required
 async def repository_details(request, user, repo_id):
     db = request.app.db
-    if not repositories.belongs_to_user(repo_id, user["_id"]):
+    if not repositories.belongs_to_user(db, repo_id, user["_id"]):
         return error_reason(f"repository {repo_id} does not belong to you")
     repo = await repositories.get_by_id(db, repo_id)
     if repo is None:
@@ -129,11 +129,36 @@ async def repository_details(request, user, repo_id):
     return json(repo)
 
 
+@app.route("/repositories/<repo_id>", methods=["DELETE"])
+@login_required
+async def repository_delete(request, user, repo_id):
+    db = request.app.db
+    if not await repositories.belongs_to_user(db, repo_id, user["_id"]):
+        return error_reason(f"repository {repo_id} does not belong to you")
+    await repositories.delete(db, repo_id)
+    return json({"res": "OK", "message": f"repo {repo_id} correctly deleted"})
+
+
+@app.route("/repositories", methods=["PUT", "PATCH"])
+@login_required
+async def repository_update(request, user, repo_id):
+    db = request.app.db
+    if not repositories.belongs_to_user(db, repo_id, user["_id"]):
+        return error_reason(f"repository {repo_id} does not belong to you")
+    src_repo = validate_repo(request.json)
+    repo = await repositories.update(db,
+                                     repo_id=repo_id,
+                                     **src_repo)
+    if repo is None:
+        return error_reason(f"unable to update repo {repo_id}")
+    return json(repo)
+
+
 @app.route("/repositories/<repo_id>/jobs", methods=["GET", "OPTIONS"])
 @login_required
 async def repository_jobs(request, user, repo_id):
     db = request.app.db
-    if not repositories.belongs_to_user(repo_id, user["_id"]):
+    if not repositories.belongs_to_user(db, repo_id, user["_id"]):
         return error_reason(f"repository {repo_id} does not belong to you")
     job_list = await jobs.get_all_by_repository_id(db, repo_id)
     return json(job_list)
@@ -176,6 +201,10 @@ def get_branch_from_request(request):
 def validate_repo(repo):
     try:
         del repo["user_id"]
+    except KeyError:
+        pass
+    try:
+        del repo["repo_id"]
     except KeyError:
         pass
     return repo

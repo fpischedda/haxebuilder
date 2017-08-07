@@ -1,12 +1,12 @@
 aiofiles==0.3.1
-aioredis==0.3.1
+aioredis==0.3.3
 hiredis==0.2.0
 httptools==0.0.9
 motor==1.1
-PyJWT==1.5.0
+PyJWT==1.5.2
 pymongo==3.4.0
-sanic==0.5.4
-Sanic-Cors==0.5.4.2
+sanic==0.6.0
+Sanic-Cors==0.6.0.0
 ujson==1.35
 uvloop==0.8.0
 websockets==3.3

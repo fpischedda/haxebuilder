@@ -24,10 +24,10 @@
   (let [{error :error profile :profile} (:body args)]
     (if (= :error nil)
       {:state {:profile profile}}
-      {:state {:error error}})))
+      {:state {:error (:message error)}})))
 
 (defmethod control :login-error [event args state]
-  {:state {}})
+  {:state {:error "Network error, please try again in a minute"}})
 
 (defmethod control :logout [event args state]
   {:state {}})

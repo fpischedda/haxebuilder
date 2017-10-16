@@ -18,7 +18,6 @@
 
 (rum/defc login < rum/reactive [r]
   (let [{error :error profile :profile} (rum/react (citrus/subscription r [:login]))]
-    (println error profile)
     [:div.login-box
      [:h2 "HaxeBuilder Dashboard"]
      [:div.login-form
@@ -27,7 +26,7 @@
       (label-input "Password"
                    {:type "password" :name "password" :id "password"})
       (login-button r)]
-     [:div#messages (:message error)]]))
+     [:div#messages error]]))
 
 (rum/defc logout [r]
   (citrus/dispatch! r :login :logout)

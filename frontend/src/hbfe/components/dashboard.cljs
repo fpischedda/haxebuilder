@@ -1,44 +1,45 @@
 (ns hbfe.components.dashboard
-  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
-   [rum.core :as rum]
+   [citrus.core :as citrus]
    [clojure.string :refer [join]]
+   [rum.core :as rum]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<!]]
-   [hbfe.state :refer [app-state]]
    [hbfe.dom :as dom]
    [hbfe.utils :refer [error-message show-message label-input]]
    [hbfe.config :as config]))
 
-(defn delete-repo [repo_id]
-  (go (let [response (<! (http/delete (config/repository-detail-url repo_id)
-                                    {:with-credentials? false
-                                     :headers {"X-Auth-Token" (:token (:profile @app-state))}}))])))
+(rum/defc repository-delete [r repo_id]
+  [:button {:on-click #(citrus/dispatch! r
+                                         :dashboard
+                                         :delete-repo
+                                         repo_id)} "Delete"])
 
-(rum/defc repository-delete [repo_id]
-  [:button {:on-click (fn [e]
-                        (delete-repo repo_id))} "Delete"])
-
-(rum/defc repository-item [item]
+(rum/defc repository-item [r item]
   (let [{:keys [_id name url tracked_branches targets]} item]
     [:tr {:on-click (fn [e] false)}
-     [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)] [(repository-delete _id)]]))
+     [:td name] [:td url] [:td (join "," tracked_branches)] [:td (join "," targets)] [(repository-delete r _id)]]))
 
-(defn create-repo [name url branches targets state success-fn]
-  nil)
+(defn create-repo [r name url branches targets]
+  #(citrus/dispatch! r
+                    :dashboard
+                    :create-repo
+                    name
+                    url
+                    branches
+                    targets))
 
-(rum/defc repository-new-button [state success-fn]
+(rum/defc repository-new-button [r]
   [:button {:on-click (fn[e]
-                        (create-repo (dom/value
+                        (create-repo r
+                                     (dom/value
                                       (dom/q "#name"))
                                      (dom/value
                                       (dom/q "#url"))
                                      (dom/value
                                       (dom/q "#tracked-branches"))
                                      (dom/value
-                                      (dom/q "#targets"))
-                                     state
-                                     success-fn))}
+                                      (dom/q "#targets"))))}
    "Register repository"])
 
 (rum/defc repository-form-new []
@@ -52,7 +53,7 @@
    [:p (label-input "Build targets"
                     {:type "text" :name "targets" :id "targets"})]])
 
-(rum/defc repository-list [repositories]
+(rum/defc repository-list [r repositories]
   [:div.repositories
    [:p "Your repositories"]
    [:table.repository-list
@@ -60,7 +61,7 @@
      [:tr
       [:td "Name"] [:td "Url"] [:td "Tracked Branches"] [:td "Build Targets"] [:td ""]]]
     [:tbody
-     (map #(repository-item %1) repositories)]]
+     (map #(repository-item r %1) repositories)]]
    [:p (repository-form-new)]])
 
 (rum/defc job-line [item]
@@ -75,27 +76,7 @@
     [:div.profile
      (str "Hello " username)]))
 
-(rum/defc dashboard [state]
-  (let [{:keys [profile repositories job-list]} state]
+(rum/defc dashboard < rum/reactive [r]
+  (let [{:keys [repositories r job-list]} (rum/react (citrus/subscription r [:dashboard]))]
     [:div
-     (profile-line profile)
      (repository-list repositories)]))
-
-(defn got-repositories [state response mount-fn]
-  (reset! state (assoc @state :repositories (:body response)))
-  (mount-fn))
-
-(defn load-repositories [state mount-fn]
-  (go (let [response (<! (http/get config/repositories-url
-                                   {:with-credentials? false
-                                    :headers {"X-Auth-Token" (:token (:profile @state))}}))]
-        (if (and
-             (= 200 (:status response))
-             (= nil (:error (:body response))))
-          (got-repositories state response mount-fn)
-          {:error (str "Server responded with error message " (error-message response))}))))
-
-(defn mount [element-id state]
-  (load-repositories state (fn[]
-                             (rum/mount (dashboard @state)
-                                        (js/document.getElementById element-id)))))

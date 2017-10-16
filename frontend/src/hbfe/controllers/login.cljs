@@ -6,7 +6,7 @@
 
 (defmulti control (fn [event] event))
 
-(defmethod control :init [event args state]
+(defmethod control :init []
   {:state initial-state})
 
 (defmethod control :authenticate [event args state]
@@ -21,9 +21,11 @@
                                    :password password}}}}))
 
 (defmethod control :login-successful [event args state]
+  (println "login successful" args state)
   {:state (:token state)})
 
 (defmethod control :login-error [event args state]
+  (println "login error" args state)
   {:state state})
 
 (defmethod control :logout [event args state]

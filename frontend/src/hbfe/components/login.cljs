@@ -26,3 +26,7 @@
                  {:type "password" :name "password" :id "password"})
     (login-button r)]
    [:div#messages]])
+
+(rum/defc logout [r]
+  (citrus/dispatch! r :login :logout)
+  [:div "Logged out"])

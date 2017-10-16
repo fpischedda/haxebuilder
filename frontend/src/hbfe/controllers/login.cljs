@@ -20,13 +20,14 @@
                      :form-params {:username username
                                    :password password}}}}))
 
-(defmethod control :login-successful [event args state]
-  (println "login successful" args state)
-  {:state (:token state)})
+(defmethod control :login-successful [event [args] state]
+  (let [{error :error profile :profile} (:body args)]
+    (if (= :error nil)
+      {:state {:profile profile}}
+      {:state {:error error}})))
 
 (defmethod control :login-error [event args state]
-  (println "login error" args state)
-  {:state state})
+  {:state {}})
 
 (defmethod control :logout [event args state]
   {:state {}})

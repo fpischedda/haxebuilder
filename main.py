@@ -77,6 +77,7 @@ async def user_new(request):
     db = request.app.db
     try:
         user = await users.create(db, **request.json)
+        del user['password_hash']
         return json(user)
     except users.UserExistsException:
         return error_reason("user already exists")

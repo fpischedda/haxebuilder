@@ -1,7 +1,6 @@
 """
 module for handling user profiles
 """
-import uuid
 from . import auth
 
 
@@ -13,16 +12,14 @@ async def user_exists(db, username, email):
     found = await db.profiles.find({
         "$or": [{"username": username}, {"email": email}]}).count()
 
-    if found > 0:
-        return True
-    return False
+    return found > 0
 
 
 async def create(db, username, email, password):
     exists = await user_exists(db, username, email)
 
     if exists:
-        raise BuilderProfileExistsException
+        raise UserExistsException
 
     password_hash = auth.get_hash(password)
     user = {
@@ -31,7 +28,7 @@ async def create(db, username, email, password):
             "email": email,
             "password_hash": password_hash,
             }
-    res = await db.profiles.insert_one(user)
+    await db.profiles.insert_one(user)
     return user
 
 

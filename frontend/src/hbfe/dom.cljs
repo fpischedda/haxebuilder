@@ -12,3 +12,6 @@
   (let [val (.-value el)]
     (when-not (str/blank? val)
       (str/trim val))))
+
+(defn elem-value [selector]
+  (value (q selector)))

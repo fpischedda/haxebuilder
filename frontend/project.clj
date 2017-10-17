@@ -11,6 +11,9 @@
                  [org.clojure/core.async  "0.3.442"
                   :exclusions [org.clojure/tools.reader]]
                  [rum "0.10.8"]
+                 [bidi "2.1.2"]
+                 [kibu/pushy "0.3.8"]
+                 [org.roman01la/citrus "3.0.0"]
                  [cljs-http "0.1.43"]]
 
   :plugins [[lein-figwheel "0.5.10"]

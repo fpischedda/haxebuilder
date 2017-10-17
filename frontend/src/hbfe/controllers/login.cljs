@@ -22,14 +22,16 @@
 
 (defmethod control :login-successful [event [args] state]
   (let [{:keys [error token username email]} (:body args)]
-    (if (= :error nil)
-      {:state {:token token
-               :profile {:username username
-                         :email}}}
+    (if (nil? error)
+      {:state {:profile {:token token
+                         :username username
+                         :email email}}
+       :goto {:url "/"}}
       {:state {:error (:message error)}})))
 
 (defmethod control :login-error [event args state]
   {:state {:error "Network error, please try again in a minute"}})
 
 (defmethod control :logout [event args state]
-  {:state {}})
+  {:state {}
+   :goto {:url "/login"}})

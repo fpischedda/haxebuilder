@@ -11,6 +11,7 @@
    [hbfe.controllers.router :as router-ctrl]
    [hbfe.handlers.http :refer [http]]
    [hbfe.handlers.navigation :refer [goto]]
+   [hbfe.handlers.local-storage :refer [local-storage]]
    [hbfe.router :as router]
    [hbfe.ui :as ui]))
 
@@ -29,15 +30,19 @@
                                     :login login/control
                                     :router router-ctrl/control}
                       :effect-handlers {:http http
-                                        :goto goto}}))
+                                        :goto goto
+                                        :local-storage local-storage}}))
 
 (citrus/broadcast-sync! reconciler :init)
+(citrus/dispatch-sync! reconciler :login :load-profile :profile)
 
-(def history (router/start! #(citrus/dispatch! reconciler :router :push %) routes))
+(router/start! #(citrus/dispatch! reconciler :router :push %) routes)
 
-(configure-navigation! {:nav-handler #(citrus/dispatch! reconciler :router :push (bidi/match-route routes %))
-                        :path-exists? (fn [path]
-                                        (boolean (bidi/match-route routes path)))})
+(configure-navigation!
+ {
+  :nav-handler #(citrus/dispatch! reconciler :router :push (bidi/match-route routes %))
+  :path-exists? (fn [path]
+                  (boolean (bidi/match-route routes path)))})
 ;; render
 (rum/mount (ui/App reconciler)
            (dom/q "#app"))

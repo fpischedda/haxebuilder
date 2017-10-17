@@ -71,11 +71,6 @@
 (rum/defc job-list [jobs]
   [:ul.job-list (map #(job-line %1) jobs)])
 
-(rum/defc profile-line [user]
-  (let [{:keys [username email]} user]
-    [:div.profile
-     (str "Hello " username)]))
-
 (rum/defc dashboard < rum/reactive [r]
   (let [{:keys [repositories r job-list]} (rum/react (citrus/subscription r [:dashboard]))]
     [:div

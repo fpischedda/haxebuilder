@@ -1,19 +1,23 @@
 (ns hbfe.core
   (:require
+   [accountant.core :refer [configure-navigation!]]
+   [bidi.bidi :as bidi]
    [citrus.core :as citrus]
+   [pushy.core :as pushy]
    [rum.core :as rum]
    [hbfe.dom :as dom]
    [hbfe.controllers.dashboard :as dashboard]
    [hbfe.controllers.login :as login]
    [hbfe.controllers.router :as router-ctrl]
    [hbfe.handlers.http :refer [http]]
+   [hbfe.handlers.navigation :refer [goto]]
    [hbfe.router :as router]
    [hbfe.ui :as ui]))
 
 (enable-console-print!)
 
 (def routes
-  ["/" [["" :login]
+  ["/" [["" :dashboard]
         ["index.html" :login]
         ["login" :login]
         ["logout" :logout]
@@ -24,12 +28,16 @@
                       :controllers {:dashboard dashboard/control
                                     :login login/control
                                     :router router-ctrl/control}
-                      :effect-handlers {:http http}}))
+                      :effect-handlers {:http http
+                                        :goto goto}}))
 
 (citrus/broadcast-sync! reconciler :init)
 
-(router/start! #(citrus/dispatch! reconciler :router :push %) routes)
+(def history (router/start! #(citrus/dispatch! reconciler :router :push %) routes))
 
+(configure-navigation! {:nav-handler #(citrus/dispatch! reconciler :router :push (bidi/match-route routes %))
+                        :path-exists? (fn [path]
+                                        (boolean (bidi/match-route routes path)))})
 ;; render
 (rum/mount (ui/App reconciler)
            (dom/q "#app"))

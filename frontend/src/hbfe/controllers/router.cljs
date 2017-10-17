@@ -1,4 +1,6 @@
-(ns hbfe.controllers.router)
+(ns hbfe.controllers.router
+  (:require
+   [bidi.bidi :as bidi]))
 
 (defmulti control (fn [action _ _] action))
 

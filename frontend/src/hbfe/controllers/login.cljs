@@ -9,6 +9,18 @@
 (defmethod control :init []
   {:state initial-state})
 
+(defmethod control :load-profile [_ [key]]
+  {:local-storage
+   {:op :get
+    :key key
+    :on-ready :profile-loaded}})
+
+(defmethod control :profile-loaded [_ [profile]]
+  (if-not (nil? profile)
+    {:state (js->clj (.parse js/JSON profile) :keywordize-keys true)
+     :goto {:url "/"}}
+    {:state initial-state}))
+
 (defmethod control :authenticate [event args state]
   (let [[username password] args]
     {:state state
@@ -21,11 +33,15 @@
                                    :password password}}}}))
 
 (defmethod control :login-successful [event [args] state]
-  (let [{:keys [error token username email]} (:body args)]
+  (let [{:keys [error token username email]} (:body args)
+        profile {:profile {:token token
+                           :username username
+                           :email email}}]
     (if (nil? error)
-      {:state {:profile {:token token
-                         :username username
-                         :email email}}
+      {:state profile
+       :local-storage {:op :set
+                       :key :profile
+                       :value (.stringify js/JSON (clj->js profile))}
        :goto {:url "/"}}
       {:state {:error (:message error)}})))
 

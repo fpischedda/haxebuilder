@@ -21,9 +21,11 @@
                                    :password password}}}}))
 
 (defmethod control :login-successful [event [args] state]
-  (let [{error :error profile :profile} (:body args)]
+  (let [{:keys [error token username email]} (:body args)]
     (if (= :error nil)
-      {:state {:profile profile}}
+      {:state {:token token
+               :profile {:username username
+                         :email}}}
       {:state {:error (:message error)}})))
 
 (defmethod control :login-error [event args state]

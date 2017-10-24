@@ -9,12 +9,12 @@
 
 (rum/defc App < rum/reactive [r]
   (let [{route :handler params :route-params} (rum/react (citrus/subscription r [:router]))
-        {profile :profile} (rum/react (citrus/subscription r [:login]))]
+        {user :profile} (rum/react (citrus/subscription r [:login]))]
     [:div
-     (profile/bar profile)
+     (profile/bar user)
      [:p "New Dashboard based on rum and citrus"]
      (case route
-       :dashboard (dashboard/dashboard r)
+       :dashboard (dashboard/dashboard r (:token user))
        :login (login/login r)
        :logout (login/logout r)
        (login/login r))]))

@@ -32,8 +32,8 @@
                      :form-params {:username username
                                    :password password}}}}))
 
-(defmethod control :login-successful [event [args] state]
-  (let [{:keys [error token username email]} (:body args)
+(defmethod control :login-successful [event [response] state]
+  (let [{:keys [error token username email]} (:body response)
         profile {:profile {:token token
                            :username username
                            :email email}}]

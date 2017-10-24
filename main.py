@@ -3,7 +3,6 @@ import aioredis
 import motor.motor_asyncio
 from sanic import Sanic
 from sanic.response import json
-from sanic.response import text
 from sanic_cors import CORS
 import uvloop
 import auth
@@ -16,7 +15,7 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = Sanic("haxebuilder")
 app.config.from_envvar("HAXEBUILDER_CONFIG")
-CORS(app, automatic_options=True)
+CORS(app, automatic_options=True, supports_credentials=True)
 
 
 def login_required(fun):

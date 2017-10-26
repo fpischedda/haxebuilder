@@ -1,6 +1,7 @@
 (ns hbfe.dom
   (:require
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [goog.dom.classes :as classes]))
 
 (defn q [selector]
   (js/document.querySelector selector))
@@ -15,3 +16,21 @@
 
 (defn elem-value [selector]
   (value (q selector)))
+
+(defn add-class!
+  "Adds the specified CSS class to each node in the content."
+  [node class]
+  (classes/add node class)
+  node)
+
+(defn remove-class!
+  "Removes the specified CSS class from each node in the content."
+  [node class]
+  (classes/remove node class)
+  node)
+
+(defn toggle-class!
+  "Toggles the specified CSS class from each node in the content."
+  [node class]
+  (classes/toggle node class)
+  node)

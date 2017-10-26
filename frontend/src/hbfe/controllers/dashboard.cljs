@@ -6,6 +6,14 @@
 (defn auth-header [token]
   {"X-Auth-Token" token})
 
+(defn load-repos-effect [token]
+  {:http
+   {:url config/repository-list-url
+    :method :get
+    :params {:headers (auth-header token)}
+    :success-fn :repo-list-loaded
+    :error-fn :repo-list-loaded-error}})
+
 (def initial-state {})
 
 (defmulti control (fn [event] event))
@@ -17,12 +25,7 @@
   {:state (assoc state :token token)})
 
 (defmethod control :load-repos [event args state]
-  {:http
-   {:url config/repository-list-url
-    :method :get
-    :params {:headers (auth-header (:token state))}
-    :success-fn :repo-list-loaded
-    :error-fn :repo-list-loaded-error}})
+  (load-repos-effect (:token state)))
 
 (defmethod control :repo-list-loaded [event [response] state]
   (let [repositories (:body response)]
@@ -40,12 +43,7 @@
           :error-fn :repo-deleted-error}})
 
 (defmethod control :repo-deleted-successful [event args state]
-  {:state state
-   :http {:url config/repository-list-url
-          :method :get
-          :params {:headers (auth-header (:token state))}
-          :success-fn :repo-list-loaded
-          :error-fn :repo-list-loaded-error}})
+  (load-repos-effect (:token state)))
 
 (defmethod control :repo-deleted-error [event args state]
   {:state state})
@@ -66,12 +64,7 @@
                                    :targets target-list}}}}))
 
 (defmethod control :repo-created-successful [event args state]
-  {:state state
-   :http {:url config/repository-list-url
-          :method :get
-          :params {:headers (auth-header (:token state))}
-          :success-fn :repo-list-loaded
-          :error-fn :repo-list-loaded-error}})
+  (load-repos-effect (:token state)))
 
 (defmethod control :repo-created-error [event args state]
   {:state state})

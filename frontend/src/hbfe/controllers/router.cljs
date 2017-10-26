@@ -9,3 +9,6 @@
 
 (defmethod control :push [_ [route] _]
   {:state route})
+
+(defmethod control :set-token [_ token state]
+  {:state state})

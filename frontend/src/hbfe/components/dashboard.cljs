@@ -10,26 +10,24 @@
    [hbfe.utils :refer [error-message show-message label-input]]
    [hbfe.config :as config]))
 
-(rum/defc repository-delete [r token repo_id]
+(rum/defc repository-delete [r repo_id]
   [:button {:on-click #(citrus/dispatch! r
                                          :dashboard
                                          :delete-repo
-                                         token
                                          repo_id)} "Delete"])
 
-(defn create-repo [r token name url branches targets]
+(defn create-repo [r name url branches targets]
   (citrus/dispatch! r
                     :dashboard
                     :create-repo
-                    token
                     name
                     url
                     branches
                     targets))
 
-(rum/defc repository-new-button [r token]
+(rum/defc repository-new-button [r]
   [:button {:on-click (fn[e]
-                        (create-repo r token
+                        (create-repo r
                                      (dom/value
                                       (dom/q "#name"))
                                      (dom/value
@@ -40,7 +38,7 @@
                                       (dom/q "#targets"))))}
    "Register repository"])
 
-(rum/defc repository-form-new [r token]
+(rum/defc repository-form-new [r]
   [:ul.new-repo-form "Track new repository"
    [:li (label-input "Name"
                     {:type "text" :name "name" :id "name"})]
@@ -50,28 +48,35 @@
                     {:type "text" :name "tracked-branches" :id "tracked-branches"})]
    [:li (label-input "Build targets"
                     {:type "text" :name "targets" :id "targets"})]
-   [:li (repository-new-button r token)]])
+   [:li (repository-new-button r)]])
 
 (defn single-or-list [value]
   (if (list? value)
     (join "," value)
     value))
 
-(rum/defc repository-item [r token item]
+(rum/defc repository-item [r item]
   (let [{:keys [_id name url tracked_branches targets]} item]
-    [:tr {:on-click (fn [e] false)}
+    [:tr {:on-click (fn [e] false) :key _id}
      [:td name] [:td url] [:td (single-or-list tracked_branches)] [:td (single-or-list targets)] [(repository-delete r _id)]]))
 
-(rum/defc repository-list [r token repositories]
+(rum/defc refresh-button [r]
+  [:button.refresh-button {:on-click (fn [e] (citrus/dispatch! r
+                                                        :dashboard
+                                                        :load-repos))}
+   "Refresh"])
+
+(rum/defc repository-list [r repositories]
   [:div.repositories
-   [:p "Your repositories"]
+   [:h3 "Your repositories"]
+   (refresh-button r)
    [:table.repository-list
     [:thead
      [:tr
       [:td "Name"] [:td "Url"] [:td "Tracked Branches"] [:td "Build Targets"] [:td ""]]]
     [:tbody
-     (map #(repository-item r token %1) repositories)]]
-   [:p (repository-form-new r token)]])
+     (map #(repository-item r %1) repositories)]]
+   [:div.new-repository (repository-form-new r)]])
 
 (rum/defc job-line [item]
   (let [{:keys [_id created_at status]} item]
@@ -80,14 +85,13 @@
 (rum/defc job-list [jobs]
   [:ul.job-list (map #(job-line %1) jobs)])
 
-(rum/defc dashboard < rum/reactive [r token]
-  (let [{:keys [repositories job-list]} (rum/react (citrus/subscription r [:dashboard]))]
+(rum/defc dashboard < rum/reactive [r]
+  (let [{:keys [token repositories job-list]} (rum/react (citrus/subscription r [:dashboard]))]
     (cond
       (nil? token) (navigate! "/login")
       (nil? repositories) (citrus/dispatch! r
                                             :dashboard
-                                            :load-repos
-                                            token))
+                                            :load-repos))
     [:div
-     (repository-list r token repositories)]
+     (repository-list r repositories)]
     ))

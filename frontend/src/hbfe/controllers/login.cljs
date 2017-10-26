@@ -9,17 +9,22 @@
 (defmethod control :init []
   {:state initial-state})
 
+(defmethod control :set-token [event _ state]
+  {:state state})
+
 (defmethod control :load-profile [_ [key]]
   {:local-storage
    {:op :get
     :key key
     :on-ready :profile-loaded}})
 
-(defmethod control :profile-loaded [_ [profile]]
-  (if-not (nil? profile)
-    {:state (js->clj (.parse js/JSON profile) :keywordize-keys true)
+(defmethod control :profile-loaded [_ [raw-profile]]
+  (let [profile (js->clj (.parse js/JSON raw-profile) :keywordize-keys true)]
+    (if-not (nil? profile)
+    {:state profile
+     :set-token (get-in profile [:profile :token])
      :goto {:url "/"}}
-    {:state initial-state}))
+    {:state initial-state})))
 
 (defmethod control :authenticate [event args state]
   (let [[username password] args]
@@ -42,6 +47,7 @@
        :local-storage {:op :set
                        :key :profile
                        :value (.stringify js/JSON (clj->js profile))}
+       :set-token (get-in profile [:profile :token])
        :goto {:url "/"}}
       {:state {:error (:message error)}})))
 

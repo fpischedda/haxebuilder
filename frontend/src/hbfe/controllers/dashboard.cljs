@@ -1,6 +1,7 @@
 (ns hbfe.controllers.dashboard
   (:require
-   [hbfe.config :as config]))
+   [hbfe.config :as config]
+   [clojure.string :refer [split]]))
 
 (defn auth-header [token]
   {"X-Auth-Token" token})
@@ -12,52 +13,65 @@
 (defmethod control :init [event args state]
   {:state initial-state})
 
-(defmethod control :load-repos [event [api-token] state]
+(defmethod control :set-token [event [token] state]
+  {:state (assoc state :token token)})
+
+(defmethod control :load-repos [event args state]
   {:http
    {:url config/repository-list-url
     :method :get
-    :params {:headers (auth-header api-token)}
+    :params {:headers (auth-header (:token state))}
     :success-fn :repo-list-loaded
     :error-fn :repo-list-loaded-error}})
 
 (defmethod control :repo-list-loaded [event [response] state]
   (let [repositories (:body response)]
-    (println repositories)
-    {:state {:repositories repositories
-             :job-list nil}}))
+    {:state (assoc state :repositories repositories)}))
 
 (defmethod control :repo-list-loaded-error [event args state]
   {:state state})
 
-(defmethod control :delete-repo [event [api-token repo_id] state]
+(defmethod control :delete-repo [event [repo_id] state]
   {:state state
    :http {:url (config/repository-detail-url repo_id)
           :method :delete
-          :params {:headers (auth-header api-token)}
-          :success-fn :repo-deleted-succesful
-          :error-fn :repo-delete-error}})
+          :params {:headers (auth-header (:token state))}
+          :success-fn :repo-deleted-successful
+          :error-fn :repo-deleted-error}})
 
 (defmethod control :repo-deleted-successful [event args state]
-  {:state state})
+  {:state state
+   :http {:url config/repository-list-url
+          :method :get
+          :params {:headers (auth-header (:token state))}
+          :success-fn :repo-list-loaded
+          :error-fn :repo-list-loaded-error}})
 
 (defmethod control :repo-deleted-error [event args state]
   {:state state})
 
 (defmethod control :create-repo [event args state]
-  (let [[api-token name url branches targets] args]
+  (let [[name url branches targets] args
+        tracked-branches (split branches #" ")
+        target-list (split targets #" ")]
     {:state state
      :http {:url config/repository-new-url
             :method :post
             :success-fn :repo-created-successful
             :error-fn :repo-created-error
-            :params {:headers (auth-header api-token)
+            :params {:headers (auth-header (:token state))
                      :json-params {:name name
                                    :url url
-                                   :tracked_branches branches
-                                   :targets targets}}}}))
+                                   :tracked_branches tracked-branches
+                                   :targets target-list}}}}))
 
 (defmethod control :repo-created-successful [event args state]
-  {:state state})
+  {:state state
+   :http {:url config/repository-list-url
+          :method :get
+          :params {:headers (auth-header (:token state))}
+          :success-fn :repo-list-loaded
+          :error-fn :repo-list-loaded-error}})
 
 (defmethod control :repo-created-error [event args state]
   {:state state})

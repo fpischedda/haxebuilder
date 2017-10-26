@@ -11,6 +11,7 @@
    [hbfe.controllers.router :as router-ctrl]
    [hbfe.handlers.http :refer [http]]
    [hbfe.handlers.navigation :refer [goto]]
+   [hbfe.handlers.session :refer [set-token]]
    [hbfe.handlers.local-storage :refer [local-storage]]
    [hbfe.router :as router]
    [hbfe.ui :as ui]))
@@ -31,6 +32,7 @@
                                     :router router-ctrl/control}
                       :effect-handlers {:http http
                                         :goto goto
+                                        :set-token set-token
                                         :local-storage local-storage}}))
 
 (citrus/broadcast-sync! reconciler :init)

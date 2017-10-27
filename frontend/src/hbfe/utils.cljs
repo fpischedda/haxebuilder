@@ -3,6 +3,9 @@
    [rum.core :as rum]))
 
 
+(rum/defc input [type name value]
+   [:input {:type type :name name :id name :value value :on-change (fn[e] false)}])
+
 (rum/defc label-input [label property-map]
   [:label label
    [:input property-map]])

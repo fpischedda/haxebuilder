@@ -121,7 +121,7 @@ async def repository_new(request, user):
 @login_required
 async def repository_details(request, user, repo_id):
     db = request.app.db
-    if not repositories.belongs_to_user(db, repo_id, user["_id"]):
+    if not await repositories.belongs_to_user(db, repo_id, user["_id"]):
         return error_reason(f"repository {repo_id} does not belong to you")
     repo = await repositories.get_by_id(db, repo_id)
     if repo is None:
@@ -139,11 +139,11 @@ async def repository_delete(request, user, repo_id):
     return json({"res": "OK", "message": f"repo {repo_id} correctly deleted"})
 
 
-@app.route("/repositories", methods=["PUT", "PATCH"])
+@app.route("/repositories/<repo_id>", methods=["PUT", "PATCH"])
 @login_required
 async def repository_update(request, user, repo_id):
     db = request.app.db
-    if not repositories.belongs_to_user(db, repo_id, user["_id"]):
+    if not await repositories.belongs_to_user(db, repo_id, user["_id"]):
         return error_reason(f"repository {repo_id} does not belong to you")
     src_repo = validate_repo(request.json)
     repo = await repositories.update(db,

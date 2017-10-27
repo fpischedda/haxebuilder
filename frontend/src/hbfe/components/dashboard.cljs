@@ -16,14 +16,34 @@
     (dom/toggle-class! show-elem "hidden")
     (dom/toggle-class! edit-elem "hidden")))
 
-(rum/defc repository-delete [r repo_id]
+(rum/defc repository-delete [r repo-id]
   [:button {:on-click #(citrus/dispatch! r
                                          :dashboard
                                          :delete-repo
-                                         repo_id)} "Delete"])
+                                         repo-id)} "Delete"])
 
-(rum/defc repository-update [r repo_id]
-  [:button {:on-click (fn [e] false)} "Update"])
+(defn update-repo [r repo-id name url branches targets]
+  (citrus/dispatch! r
+                    :dashboard
+                    :update-repo
+                    repo-id
+                    name
+                    url
+                    branches
+                    targets))
+
+(rum/defc repository-update [r repo-id]
+  [:button {:on-click (fn [e]
+                        (toggle-repo-editing repo-id)
+                        (update-repo r repo-id
+                                     (dom/value
+                                      (dom/q (str "#name-" repo-id)))
+                                     (dom/value
+                                      (dom/q (str "#url-" repo-id)))
+                                     (dom/value
+                                      (dom/q (str "#tracked-branches-" repo-id)))
+                                     (dom/value
+                                      (dom/q (str "#targets-" repo-id)))))} "Update"])
 
 (rum/defc repository-cancel-edit [repo_id]
   [:button {:on-click #(toggle-repo-editing repo_id)} "Cancel"])
@@ -74,11 +94,11 @@
 
 (rum/defc repository-edit-item [r item]
   (let [{:keys [_id name url tracked_branches targets]} item]
-    [:tr.item-edit.hidden {:on-click (fn [e] false) :id (str "item-edit-" _id) :key _id}
-     [:td (input "text" "name" name)]
-     [:td (input "text" "url" url)]
-     [:td (input "text" "tracked-branches" (single-or-list tracked_branches " "))]
-     [:td (input "text" "targets" (single-or-list targets " "))]
+    [:tr.item-edit.hidden {:id (str "item-edit-" _id) :key _id}
+     [:td (input "text" (str "name-"  _id) name)]
+     [:td (input "text" (str "url-"  _id) url)]
+     [:td (input "text" (str "tracked-branches-"  _id) (single-or-list tracked_branches " "))]
+     [:td (input "text" (str "targets-"  _id) (single-or-list targets " "))]
      [:td (repository-delete r _id) (repository-update r _id) (repository-cancel-edit _id)]]))
 
 (rum/defc refresh-button [r]
@@ -87,9 +107,9 @@
                                                         :load-repos))}
    "Refresh"])
 
-(defn repo-lines [r repo_id]
-  [(repository-item r repo_id)
-   (repository-edit-item r repo_id)])
+(defn repo-lines [r repo]
+  [(repository-item r repo)
+   (repository-edit-item r repo)])
 
 (rum/defc repository-list [r repositories]
   [:div.repositories

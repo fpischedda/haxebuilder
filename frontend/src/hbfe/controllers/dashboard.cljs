@@ -34,9 +34,9 @@
 (defmethod control :repo-list-loaded-error [event args state]
   {:state state})
 
-(defmethod control :delete-repo [event [repo_id] state]
+(defmethod control :delete-repo [event [repo-id] state]
   {:state state
-   :http {:url (config/repository-detail-url repo_id)
+   :http {:url (config/repository-detail-url repo-id)
           :method :delete
           :params {:headers (auth-header (:token state))}
           :success-fn :repo-deleted-successful
@@ -67,4 +67,25 @@
   (load-repos-effect (:token state)))
 
 (defmethod control :repo-created-error [event args state]
+  {:state state})
+
+(defmethod control :update-repo [event args state]
+  (let [[repo-id name url branches targets] args
+        tracked-branches (split branches #" ")
+        target-list (split targets #" ")]
+    {:state state
+     :http {:url (config/repository-detail-url repo-id)
+            :method :patch
+            :success-fn :repo-updated-successful
+            :error-fn :repo-updated-error
+            :params {:headers (auth-header (:token state))
+                     :json-params {:name name
+                                   :url url
+                                   :tracked_branches tracked-branches
+                                   :targets target-list}}}}))
+
+(defmethod control :repo-updated-successful [event args state]
+  (load-repos-effect (:token state)))
+
+(defmethod control :repo-updated-error [event args state]
   {:state state})
